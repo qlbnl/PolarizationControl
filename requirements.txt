@@ -1,4 +1,4 @@
-argparse
+apscheduler
 numpy
 PyVISA-py
 pyusb

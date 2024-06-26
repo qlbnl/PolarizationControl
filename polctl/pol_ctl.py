@@ -1,15 +1,26 @@
 import sys
 import time
-import argparse
 import asyncio
-import queue
 import logging
 import numpy as np
-from constants import *
-from ga_params import GAParams
-from pax1000 import PAX1000
-from ozoptics import EPCDriver
-from sop import transform
+from polctl.ga_params import GAParams
+from polctl.pax1000 import PAX1000
+from polctl.ozoptics import EPCDriver
+from polctl.sop import transform
+from polctl.constants import (
+    MAX_BUFLEN,
+    CMD,
+    WAVELENGTH,
+    DEF_CAP_SAMPLES,
+    DEF_CAP_SAMPLE_SLEEP,
+    DEF_GA_RAND_ITERS,
+    DEF_GA_RAND_THRESH,
+    STEP,
+    NCHAN,
+    LEARNING_RATE,
+    EPC_SLEEP_TIME,
+    Hstate
+)
 
 
 log = logging.getLogger(__name__)
@@ -19,8 +30,9 @@ lock = asyncio.Lock()
 sq = asyncio.Queue()
 rq = asyncio.Queue()
 
+
 class PolarizationControl:
-    def __init__(self, pinit = None):
+    def __init__(self, pinit=None):
         # cmd state
         self._curcmd = CMD.MEAS
         self._curargs = None
@@ -128,7 +140,7 @@ class PolarizationControl:
                     max_iterations=params.iters,
                     threshold=(1-params.fidelity),
                     paramsi=None,
-                    channels=[1,1,1,1])
+                    channels=[1, 1, 1, 1])
             except Exception as e:
                 log.error(f"Could not complete GA: {e}")
                 return f"ERR {e}"
@@ -161,7 +173,7 @@ class PolarizationControl:
                 max_iterations=params.iters,
                 threshold=(1-params.fidelity),
                 paramsi=pinit,
-                channels=[1,1,1,1])
+                channels=[1, 1, 1, 1])
         except Exception as e:
             log.error(f"Could not complete GA: {e}")
             return f"ERR {e}"
@@ -178,8 +190,8 @@ class PolarizationControl:
                 log.error(f"Invalid args: {e}")
                 return self._cap
         log.info(f"Capturing {samples} SOPs...")
-        ary = np.array([0j,0j,0j])
-        for i in range(1,samples+1):
+        ary = np.array([0j, 0j, 0j])
+        for i in range(1, samples+1):
             v = np.array(self.pax.stoke_vectors())
             log.info(f"{i}: {v}")
             ary += v
@@ -220,7 +232,7 @@ class PolarizationControl:
 
     def _rand_params(self, channels=[1]*NCHAN):
         p = (np.random.rand(4) - 0.5) * 9900
-        for i,v in enumerate(channels):
+        for i, v in enumerate(channels):
             p[i] = 0 if not v else p[i]
         return p
 
@@ -259,15 +271,15 @@ class PolarizationControl:
                 break
             gchange = False
             while not gchange:
-                for i,v in enumerate(channels):
+                for i, v in enumerate(channels):
                     if v and np.random.rand() > 0.5:
                         pgrad[i] += grad_step
                         gchange = True
             (pgrad, inner_curr) = self.grad_func(p, pgrad, target_states, target_pols,
                                                  LEARNING_RATE, inner_curr)
             p = pgrad.copy()
-            p[p>5000] = 0
-            p[p<-5000] = 0
+            p[p > 5000] = 0
+            p[p < -5000] = 0
             p_history = np.vstack((p_history, p))
             f_history = np.vstack((f_history, inner_curr))
             log.info(f"Iter {iters+1}, f = {float(f_history[-1][0].real)} - {np.round(p)}")
@@ -279,7 +291,7 @@ class PolarizationControl:
     def read_inner(self, params, target_states, input_pols):
         ret_f = 0
         nstates = len(target_states)
-        for i,tstate in enumerate(target_states):
+        for i, tstate in enumerate(target_states):
             for ch in range(len(params)):
                 self.epc.write_v(ch+1, params[ch])
             time.sleep(EPC_SLEEP_TIME)
@@ -306,6 +318,7 @@ class PolarizationControl:
             params1 += delta_p
             inner_curr = self.read_inner(params1, target_states, input_pols)
             return (params1, inner_curr)  # if inner product increases, advance directly
+
 
 # This method implements the socket server.
 # It writes received commands from the network into a queue
@@ -339,19 +352,25 @@ async def PolControlProtocol(reader, writer):
             await rq.put({"cmd": cmd, "args": args})
             await _write(await sq.get())
         except Exception as e:
-            log.error(f"Error processing request: {data}")
+            log.error(f"Error processing request: {data}: {e}")
         lock.release()
 
-async def main(pctl, host, port):
+
+async def run(pctl, host, port):
     server = await asyncio.start_server(PolControlProtocol, host, port)
     asyncio.create_task(pctl._loop())
     await server.serve_forever()
-        
-if __name__ == '__main__':
+
+
+def main():
     try:
         pinit = sys.argv[1]
         pinit = np.array(list(map(float, pinit.split(","))))
-    except Exception as e:
+    except Exception:
         pinit = None
     p = PolarizationControl(pinit)
     asyncio.run(main(p, '127.0.0.1', 6000))
+
+
+if __name__ == '__main__':
+    main()

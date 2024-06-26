@@ -1,4 +1,10 @@
-from constants import *
+import numpy as np
+from polctl.constants import (
+    DEF_GA_FIDELITY,
+    DEF_GA_ITERATIONS,
+    CMD
+)
+
 
 class GAParams:
     def __init__(self, args, cap, ttarget):
@@ -36,7 +42,7 @@ class GAParams:
             self._fidelity = float(args[1])
             self._iters = int(args[2])
             self._time_limit = int(args[3])
-        except:
+        except Exception:
             pass
 
     @property

@@ -1,10 +1,10 @@
 import numpy as np
 
 WAVELENGTH = 1550e-9
-STEP = 50 # min voltage resolution of EPC
+STEP = 50  # min voltage resolution of EPC
 LEARNING_RATE = 100
 NCHAN = 4
-EPC_SLEEP_TIME = 0.4 # seconds
+EPC_SLEEP_TIME = 0.4  # seconds
 DEF_CAP_SAMPLES = 10
 DEF_CAP_SAMPLE_SLEEP = 0.5
 DEF_GA_FIDELITY = 0.999
@@ -20,6 +20,7 @@ Rstate = np.array([0, 0, 1])
 Lstate = np.array([0, 0, -1])
 
 MAX_BUFLEN = 512
+
 
 class CMD:
     MEAS = "R"

@@ -1,11 +1,10 @@
 import asyncio
-import time
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-
 
 CAPTURE = "C 10"
 SET = "S C 0.999"
 GET = "G SOP"
+
 
 async def tcp_pol_client(msg):
     reader, writer = await asyncio.open_connection(
@@ -23,6 +22,7 @@ async def tcp_pol_client(msg):
 async def calibrate_job():
     await tcp_pol_client(SET)
 
+
 async def get_sop_job():
     await tcp_pol_client(GET)
 
@@ -34,8 +34,8 @@ try:
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(tcp_pol_client(CAPTURE))
-    #time.sleep(240)
-    #loop.run_until_complete(tcp_pol_client(SET))
+    # time.sleep(240)
+    # loop.run_until_complete(tcp_pol_client(SET))
     scheduler.start()
     loop.run_forever()
 except (KeyboardInterrupt, SystemExit):

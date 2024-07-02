@@ -4,7 +4,7 @@
 
 This repository contains the `pol_ctl` program for controlling the polarization of light. It is designed to perform polarization stability control in fiber optic testbed environments. The program assumes the availability of an electronic polarization controller (EPC) and a polarimeter accessible via USB. The current version is implemented with drivers for an OZOptics EPC-400 and a Thorlabs PAX1000 polarimeter; however, other hardware devices could be introduced as needed.
 
-The `pol_ctrl` program performs polarization stabilization using a measurement feedback loop and a gradient ascent approach to converging on a desired state of polarization. The functions of the program may also be controlled through a text-based protocol over TCP.
+The `pol_ctrl` program performs polarization stabilization using a measurement feedback loop and a gradient ascent approach for converging on a desired state of polarization. The functions of the program may also be controlled through a text-based protocol over TCP.
 
 ## Installation
 The `pol_ctl.py` script may be executed directly from the polctl folder. Alternatively, the program can be installed in your environment with
